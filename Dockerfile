@@ -130,7 +130,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
   ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
   mkdir -p /etc/nginx/modsec && \
-  echo $'# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# OWASP CRS v3 rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n' >> /etc/nginx/modsec/main.conf && \
+  echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# OWASP CRS v3 rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
   mv /src/modsecurity.conf /etc/nginx/modsec && \
   sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/nginx/modsec/modsecurity.conf && \
   mv /src/owasp-modsecurity-crs-${OWASPCRS_VERSION} /usr/local/ && \
