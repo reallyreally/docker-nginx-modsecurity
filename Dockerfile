@@ -17,6 +17,7 @@ ARG VERSION
 ARG OPENSSL_VERSION
 ARG LIBPNG_VERSION
 ARG LUAJIT_VERSION
+ARG OWASPCRS_VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="NGINX with Certbot and lua support" \
       org.label-schema.description="Provides nginx ${VERSION} with modsecurity and lua (LuaJIT v${LUAJIT_VERSION}) support for certbot --nginx. Built with OpenSSL v${OPENSSL_VERSION} and LibPNG v${LIBPNG_VERSION}" \
@@ -136,8 +137,8 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   mv /src/owasp-modsecurity-crs-${OWASPCRS_VERSION} /usr/local/ && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
   apk del ${build_pkgs} && \
-  apk add ${runtime_pkgs}
-RUN apk add gcc make perl && \
+  apk add ${runtime_pkgs} && \
+  apk add gcc make perl && \
   cd /src/openssl-${OPENSSL_VERSION} && \
   make -j$(nproc) install && \
   ln -s /usr/local/ssl/bin/openssl /usr/bin/ && \
