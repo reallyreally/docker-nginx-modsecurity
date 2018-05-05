@@ -124,7 +124,6 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   sed -i 's!events {!load_module modules/ngx_http_modsecurity_module.so;\n\nevents {!g' /etc/nginx/nginx.conf && \
   sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        include /etc/nginx/modsec/modsec_on.conf;!g" /etc/nginx/nginx.conf && \
   sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            include /etc/nginx/modsec/modsec_rules.conf;!g" /etc/nginx/nginx.conf && \
-  cat /etc/nginx/nginx.conf && \
   cd ~ && \
   pip install virtualenv && \
   virtualenv /env && \
@@ -138,11 +137,14 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   echo -e "# Example placeholder\n" > /etc/nginx/modsec/conf.d/example.conf && \
   echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# User generated\nInclude /etc/nginx/modsec/conf.d/*.conf\n\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
   echo -e "# For inclusion and centralized control\nmodsecurity on;\n" > /etc/nginx/modsec/modsec_on.conf && \
-  echo -e "# For inclusion and centralized control\nmodsecurity_rules_file /etc/nginx/modsec/main.conf;\n" > /etc/nginx/modsec/modsec_rules.conf && \
+  echo -e "# For inclusion and centralized control\nmodsecurity_rules_file /etc/nginx/modsec/modsec_includes.conf;\n" > /etc/nginx/modsec/modsec_rules.conf && \
+  echo -e "# For inclusion and centralized control\ninclude /etc/nginx/modsec/modsecurity.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-901-INITIALIZATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-905-COMMON-EXCEPTIONS.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-910-IP-REPUTATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-911-METHOD-ENFORCEMENT.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-912-DOS-PROTECTION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-913-SCANNER-DETECTION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-920-PROTOCOL-ENFORCEMENT.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-921-PROTOCOL-ATTACK.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-930-APPLICATION-ATTACK-LFI.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-931-APPLICATION-ATTACK-RFI.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-932-APPLICATION-ATTACK-RCE.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-933-APPLICATION-ATTACK-PHP.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-941-APPLICATION-ATTACK-XSS.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-942-APPLICATION-ATTACK-SQLI.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-943-APPLICATION-ATTACK-SESSION-FIXATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-949-BLOCKING-EVALUATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-950-DATA-LEAKAGES.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-951-DATA-LEAKAGES-SQL.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-952-DATA-LEAKAGES-JAVA.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-953-DATA-LEAKAGES-PHP.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-954-DATA-LEAKAGES-IIS.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-959-BLOCKING-EVALUATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-980-CORRELATION.conf\ninclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf\n" > /etc/nginx/modsec/modsec_includes.conf && \
   mv /src/modsecurity.conf /etc/nginx/modsec && \
   sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/g' /etc/nginx/modsec/modsecurity.conf && \
   sed -i 's!SecAuditLog /var/log/modsec_audit.log!SecAuditLog /var/log/nginx/modsec_audit.log!g' /etc/nginx/modsec/modsecurity.conf && \
   mv /src/owasp-modsecurity-crs-${OWASPCRS_VERSION} /usr/local/ && \
+  mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf && \
+  mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
   apk del ${build_pkgs} && \
   apk add ${runtime_pkgs} && \
@@ -155,7 +157,23 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   rm -Rf /src && \
   echo -e "#!/usr/bin/env sh\n\nif [ -f "/usr/bin/certbot" ]; then\n  /usr/bin/certbot renew\nfi\n" > /etc/periodic/daily/certrenew && \
   chmod 755 /etc/periodic/daily/certrenew && \
-  chown -R nginx:nginx /run/nginx /var/log/nginx /var/cache/nginx /etc/nginx
+  chown -R nginx:nginx /run/nginx /var/log/nginx /var/cache/nginx /etc/nginx && \
+  echo -e "\n\n** /etc/nginx/nginx.conf\n" && \
+  cat /etc/nginx/nginx.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/conf.d/example.conf\n" && \
+  cat /etc/nginx/modsec/conf.d/example.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/main.conf\n" && \
+  cat /etc/nginx/modsec/main.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/modsecurity.conf\n" && \
+  cat /etc/nginx/modsec/modsecurity.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/modsec_on.conf\n" && \
+  cat /etc/nginx/modsec/modsec_on.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/modsec_rules.conf\n" && \
+  cat /etc/nginx/modsec/modsec_rules.conf && \
+  echo -e "\n\n** /etc/nginx/modsec/modsec_includes.conf\n" && \
+  cat /etc/nginx/modsec/modsec_includes.conf && \
+  echo -e "\n\n** /etc/periodic/daily/certrenew\n" && \
+  cat /etc/periodic/daily/certrenew
 
 EXPOSE 80 443
 
