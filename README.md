@@ -17,6 +17,21 @@ docker run --name nginx-modsecurity \
 ModSecurity
 -----------
 Pre-configured with rules from OWASP CRS
+Generates `/etc/nginx/modsec/modsec_on.conf` and `/etc/nginx/modsec/modsec_rules.conf` which you can use in for configurations. For example:
+```
+server {
+    listen       80;
+    server_name  localhost;
+
+    include /etc/nginx/modsec/modsec_on.conf;
+
+    location / {
+        root   html;
+        index  index.html index.htm;
+        include /etc/nginx/modsec/modsec_rules.conf;
+    }
+  }
+```
 
 Certbot
 -------
