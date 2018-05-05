@@ -18,7 +18,7 @@ ARG VERSION
 ARG OPENSSL_VERSION
 ARG LIBPNG_VERSION
 ARG LUAJIT_VERSION
-ENV MODSECURITY
+ARG MODSECURITY
 ARG OWASPCRS_VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="NGINX with ModSecurity, Certbot and lua support" \
