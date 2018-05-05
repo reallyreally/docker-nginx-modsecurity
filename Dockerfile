@@ -135,6 +135,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
   ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
   mkdir -p /etc/nginx/modsec/conf.d && \
+  echo -e "# Example placeholder\n" > /etc/nginx/modsec/conf.d/example.conf && \
   echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# User generated\nInclude /etc/nginx/modsec/conf.d/*.conf\n\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
   echo -e "# For inclusion and centralized control\nmodsecurity on;\n" > /etc/nginx/modsec/modsec_on.conf && \
   echo -e "# For inclusion and centralized control\nmodsecurity_rules_file /etc/nginx/modsec/main.conf;\n" > /etc/nginx/modsec/modsec_rules.conf && \
