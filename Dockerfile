@@ -123,7 +123,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   sed -i "s!^        #error_page  404              /404.html;!        include /etc/nginx/insert.d/*.conf;\n\n        #error_page  404              /404.html;!g" /etc/nginx/nginx.conf && \
   sed -i 's!events {!load_module modules/ngx_http_modsecurity_module.so;\n\nevents {!g' /etc/nginx/nginx.conf && \
   sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        modsecurity on;!g" /etc/nginx/nginx.conf && \
-  sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            modsecurity_rules_file /etc/nginx/modsec/modsecurity.conf;!g" /etc/nginx/nginx.conf && \
+  sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            modsecurity_rules_file /etc/nginx/modsec/main.conf;!g" /etc/nginx/nginx.conf && \
   cat /etc/nginx/nginx.conf && \
   cd ~ && \
   pip install virtualenv && \
@@ -134,12 +134,13 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   export VENV_ARGS="--python $(command -v python2 || command -v python2.7)" && \
   tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
   ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
-  mkdir -p /etc/nginx/modsec && \
-  echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
+  mkdir -p /etc/nginx/modsec/conf.d && \
+  echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# User generated\nInclude /etc/nginx/modsec/conf.d/*.conf\n\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
+  echo -e "# For inclusion and centralized control\nmodsecurity on;\n" > /etc/nginx/modsec/modsec_on.conf && \
+  echo -e "# For inclusion and centralized control\nmodsecurity_rules_file /etc/nginx/modsec/main.conf;\n" > /etc/nginx/modsec/modsec_rules.conf && \
   mv /src/modsecurity.conf /etc/nginx/modsec && \
   sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/g' /etc/nginx/modsec/modsecurity.conf && \
   sed -i 's!SecAuditLog /var/log/modsec_audit.log!SecAuditLog /var/log/nginx/modsec_audit.log!g' /etc/nginx/modsec/modsecurity.conf && \
-  sed -i 's!^SecRequestBodyInMemoryLimit!#SecRequestBodyInMemoryLimit!g' /etc/nginx/modsec/modsecurity.conf && \
   mv /src/owasp-modsecurity-crs-${OWASPCRS_VERSION} /usr/local/ && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
   apk del ${build_pkgs} && \
