@@ -135,7 +135,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   mv /src/modsecurity.conf /etc/nginx/modsec && \
   sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/g' /etc/nginx/modsec/modsecurity.conf && \
   sed -i 's!SecAuditLog /var/log/modsec_audit.log!SecAuditLog /var/log/nginx/modsec_audit.log!g' /etc/nginx/modsec/modsecurity.conf && \
-  SecAuditLog /var/log/modsec_audit.log
+  sed -i 's!^SecRequestBodyInMemoryLimit!#SecRequestBodyInMemoryLimit!g' /etc/nginx/modsec/modsecurity.conf && \
   mv /src/owasp-modsecurity-crs-${OWASPCRS_VERSION} /usr/local/ && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
   apk del ${build_pkgs} && \
