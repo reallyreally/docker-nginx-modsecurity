@@ -8,6 +8,7 @@ ENV LIBPNG_VERSION=1.6.34
 ENV LUAJIT_VERSION=2.0.5
 ENV NGXDEVELKIT_VERSION=0.3.0
 ENV NGXLUA_VERSION=0.10.13
+ENV MODSECURITY=3
 ENV OWASPCRS_VERSION=3.0.0
 
 # Build-time metadata as defined at http://label-schema.org
@@ -17,10 +18,11 @@ ARG VERSION
 ARG OPENSSL_VERSION
 ARG LIBPNG_VERSION
 ARG LUAJIT_VERSION
+ENV MODSECURITY
 ARG OWASPCRS_VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
-      org.label-schema.name="NGINX with Certbot and lua support" \
-      org.label-schema.description="Provides nginx ${VERSION} with modsecurity and lua (LuaJIT v${LUAJIT_VERSION}) support for certbot --nginx. Built with OpenSSL v${OPENSSL_VERSION} and LibPNG v${LIBPNG_VERSION}" \
+      org.label-schema.name="NGINX with ModSecurity, Certbot and lua support" \
+      org.label-schema.description="Provides nginx ${VERSION} with ModSecurity v${MODSECURITY} and lua (LuaJIT v${LUAJIT_VERSION}) support for certbot --nginx. Built with OpenSSL v${OPENSSL_VERSION} and LibPNG v${LIBPNG_VERSION}" \
       org.label-schema.url="https://really.ai/about/opensource" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/reallyreally/docker-nginx-modsecurity" \
@@ -36,7 +38,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   addgroup nginx && \
   adduser -s /usr/sbin/nologin -G nginx -D nginx && \
   cd /src && \
-  git clone --depth 1 -b v3/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
+  git clone --depth 1 -b v${MODSECURITY}/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
   git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git && \
   wget -qO - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - http://nginx.org/download/nginx-${VERSION}.tar.gz | tar xzf  - -C /src && \
@@ -45,7 +47,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   wget -qO - https://github.com/simpl/ngx_devel_kit/archive/v${NGXDEVELKIT_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/openresty/lua-nginx-module/archive/v${NGXLUA_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v${OWASPCRS_VERSION}.tar.gz | tar xzf  - -C /src && \
-  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended && \
+  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v${MODSECURITY}/master/modsecurity.conf-recommended && \
   cd /src/LuaJIT-${LUAJIT_VERSION} && \
   make -j$(nproc) && \
   make -j$(nproc) install && \
@@ -133,7 +135,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
   ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
   mkdir -p /etc/nginx/modsec && \
-  echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# OWASP CRS v3 rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
+  echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
   mv /src/modsecurity.conf /etc/nginx/modsec && \
   sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/g' /etc/nginx/modsec/modsecurity.conf && \
   sed -i 's!SecAuditLog /var/log/modsec_audit.log!SecAuditLog /var/log/nginx/modsec_audit.log!g' /etc/nginx/modsec/modsecurity.conf && \
