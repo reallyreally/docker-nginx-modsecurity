@@ -122,8 +122,8 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   sed -i "s!^    #gzip  on;!    #gzip  on;\n    server_names_hash_max_size 6144;\n    server_names_hash_bucket_size 128;\n!g" /etc/nginx/nginx.conf && \
   sed -i "s!^        #error_page  404              /404.html;!        include /etc/nginx/insert.d/*.conf;\n\n        #error_page  404              /404.html;!g" /etc/nginx/nginx.conf && \
   sed -i 's!events {!load_module modules/ngx_http_modsecurity_module.so;\n\nevents {!g' /etc/nginx/nginx.conf && \
-  sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        modsecurity on;!g" /etc/nginx/nginx.conf && \
-  sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            modsecurity_rules_file /etc/nginx/modsec/main.conf;!g" /etc/nginx/nginx.conf && \
+  sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        include /etc/nginx/modsec/modsec_on.conf;!g" /etc/nginx/nginx.conf && \
+  sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            include /etc/nginx/modsec/modsec_rules.conf;!g" /etc/nginx/nginx.conf && \
   cat /etc/nginx/nginx.conf && \
   cd ~ && \
   pip install virtualenv && \
