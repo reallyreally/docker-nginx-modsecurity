@@ -45,7 +45,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   wget -qO - https://github.com/simpl/ngx_devel_kit/archive/v${NGXDEVELKIT_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/openresty/lua-nginx-module/archive/v${NGXLUA_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v${OWASPCRS_VERSION}.tar.gz | tar xzf  - -C /src && \
-  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v2/master/modsecurity.conf-recommended && \
+  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v3/master/modsecurity.conf-recommended && \
   cd /src/LuaJIT-${LUAJIT_VERSION} && \
   make -j$(nproc) && \
   make -j$(nproc) install && \
