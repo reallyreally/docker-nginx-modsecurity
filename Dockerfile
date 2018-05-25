@@ -2,14 +2,15 @@ FROM alpine:latest
 
 MAINTAINER Troy Kelly <troy.kelly@really.ai>
 
-ENV VERSION=1.14.0
-ENV OPENSSL_VERSION=1.1.0h
+ENV VERSION=1.13.12
+ENV OPENSSL_VERSION=1.0.2o
 ENV LIBPNG_VERSION=1.6.34
 ENV LUAJIT_VERSION=2.0.5
 ENV NGXDEVELKIT_VERSION=0.3.0
 ENV NGXLUA_VERSION=0.10.13
 ENV MODSECURITY=3
 ENV OWASPCRS_VERSION=3.0.0
+ENV PYTHON_VERSION=3.6.5
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -20,9 +21,10 @@ ARG LIBPNG_VERSION
 ARG LUAJIT_VERSION
 ARG MODSECURITY
 ARG OWASPCRS_VERSION
+ARG PYTHON_VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="NGINX with ModSecurity, Certbot and lua support" \
-      org.label-schema.description="Provides nginx ${VERSION} with ModSecurity v${MODSECURITY} and lua (LuaJIT v${LUAJIT_VERSION}) support for certbot --nginx. Built with OpenSSL v${OPENSSL_VERSION} and LibPNG v${LIBPNG_VERSION}" \
+      org.label-schema.description="Provides nginx ${VERSION} with ModSecurity v${MODSECURITY} (OWASP ModSecurity Core Rule Set CRS ${OWASPCRS_VERSION}) and lua (LuaJIT v${LUAJIT_VERSION}) support for certbot --nginx. Built with OpenSSL v${OPENSSL_VERSION} and LibPNG v${LIBPNG_VERSION}. Using Python ${PYTHON_VERSION} for Let's Encrypt Certbot" \
       org.label-schema.url="https://really.ai/about/opensource" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/reallyreally/docker-nginx-modsecurity" \
@@ -30,10 +32,9 @@ LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.version=v$VERSION \
       org.label-schema.schema-version="1.0"
 
-RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold curl curl-dev g++ gcc geoip-dev git gnupg icu-dev libcurl libffi-dev libjpeg-turbo-dev libstdc++ libtool libxml2-dev linux-headers lmdb-dev m4 make openssh-client pcre-dev pcre2-dev perl pkgconf py-pip python python2-dev wget yajl-dev zlib-dev" && \
-  runtime_pkgs="ca-certificates pcre apr-util libjpeg-turbo icu icu-libs python2 py-setuptools yajl lua geoip libxml2 lua5.3-maxminddb" && \
+RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold curl curl-dev g++ gcc geoip-dev git gnupg icu-dev libcurl libffi-dev libjpeg-turbo-dev libstdc++ libtool libxml2-dev linux-headers lmdb-dev m4 make openssh-client pcre-dev pcre2-dev perl pkgconf wget yajl-dev zlib-dev" && \
+  runtime_pkgs="ca-certificates pcre apr-util libjpeg-turbo icu icu-libs yajl lua geoip libxml2 lua5.3-maxminddb libffi" && \
   apk add --update --no-cache ${build_pkgs} ${runtime_pkgs} && \
-  pip install --upgrade pip && \
   mkdir -p /src /var/log/nginx /run/nginx /var/cache/nginx && \
   addgroup nginx && \
   adduser -s /usr/sbin/nologin -G nginx -D nginx && \
@@ -47,18 +48,27 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   wget -qO - https://github.com/simpl/ngx_devel_kit/archive/v${NGXDEVELKIT_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/openresty/lua-nginx-module/archive/v${NGXLUA_VERSION}.tar.gz | tar xzf  - -C /src && \
   wget -qO - https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v${OWASPCRS_VERSION}.tar.gz | tar xzf  - -C /src && \
+  wget -qO - https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz | tar xzf  - -C /src && \
   wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v${MODSECURITY}/master/modsecurity.conf-recommended && \
+  cd /src/openssl-${OPENSSL_VERSION} && \
+  ./config no-async -Wl,--enable-new-dtags,-rpath,'$(LIBRPATH)' && \
+  make -j$(nproc) depend && \
+  make -j$(nproc) && \
+  make -j$(nproc) install && \
+  cd /src/Python-${PYTHON_VERSION} && \
+  ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared && \
+  make -j$(nproc) && \
+  make -j$(nproc) install && \
+  python3 -m ensurepip && \
+  pip3 install --upgrade pip setuptools && \
+  if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
+  if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
   cd /src/LuaJIT-${LUAJIT_VERSION} && \
   make -j$(nproc) && \
   make -j$(nproc) install && \
   cd /src/libpng-${LIBPNG_VERSION} && \
   ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared --with-libpng-compat && \
   make -j$(nproc) install V=0 && \
-  cd /src/openssl-${OPENSSL_VERSION} && \
-  ./config no-async && \
-  make -j$(nproc) depend && \
-  make -j$(nproc) && \
-  make -j$(nproc) install && \
   cd /src/ModSecurity && \
   git submodule init && \
   git submodule update && \
@@ -125,12 +135,12 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        #include /etc/nginx/modsec/modsec_on.conf;!g" /etc/nginx/nginx.conf && \
   sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            #include /etc/nginx/modsec/modsec_rules.conf;!g" /etc/nginx/nginx.conf && \
   cd ~ && \
-  pip install virtualenv && \
+  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" pip install -I --no-cache-dir virtualenv && \
   virtualenv /env && \
   git clone https://github.com/certbot/certbot && \
   cd certbot && \
-  /env/bin/pip install -r ./readthedocs.org.requirements.txt && \
-  export VENV_ARGS="--python $(command -v python2 || command -v python2.7)" && \
+  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" /env/bin/pip install -r ./readthedocs.org.requirements.txt && \
+  export VENV_ARGS="--python $(command -v python3 || command -v python3.6)" && \
   tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
   ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
   mkdir -p /etc/nginx/modsec/conf.d && \
@@ -155,6 +165,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   cd ~ && \
   apk del perl gcc make && \
   rm -Rf /src && \
+  rm -Rf ~/.cache && \
   echo -e "#!/usr/bin/env sh\n\nif [ -f "/usr/bin/certbot" ]; then\n  /usr/bin/certbot renew\nfi\n" > /etc/periodic/daily/certrenew && \
   chmod 755 /etc/periodic/daily/certrenew && \
   chown -R nginx:nginx /run/nginx /var/log/nginx /var/cache/nginx /etc/nginx && \
