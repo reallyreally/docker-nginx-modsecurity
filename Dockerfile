@@ -2,15 +2,15 @@ FROM alpine:latest
 
 MAINTAINER Troy Kelly <troy.kelly@really.ai>
 
-ENV VERSION=1.13.12
-ENV OPENSSL_VERSION=1.0.2o
-ENV LIBPNG_VERSION=1.6.34
+ENV VERSION=1.15.5
+ENV OPENSSL_VERSION=1.1.1
+ENV LIBPNG_VERSION=1.6.35
 ENV LUAJIT_VERSION=2.0.5
 ENV NGXDEVELKIT_VERSION=0.3.0
 ENV NGXLUA_VERSION=0.10.13
 ENV MODSECURITY=3
 ENV OWASPCRS_VERSION=3.0.0
-ENV PYTHON_VERSION=3.6.5
+ENV PYTHON_VERSION=3.7.0
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -135,14 +135,27 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   sed -i "s!^        server_name  localhost;!        server_name  localhost;\n\n        #include /etc/nginx/modsec/modsec_on.conf;!g" /etc/nginx/nginx.conf && \
   sed -i "s!^            index  index.html index.htm;!            index  index.html index.htm;\n            #include /etc/nginx/modsec/modsec_rules.conf;!g" /etc/nginx/nginx.conf && \
   cd ~ && \
-  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" pip install -I --no-cache-dir virtualenv && \
-  virtualenv /env && \
   git clone https://github.com/certbot/certbot && \
   cd certbot && \
-  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" /env/bin/pip install -r ./readthedocs.org.requirements.txt && \
-  export VENV_ARGS="--python $(command -v python3 || command -v python3.6)" && \
-  tools/_venv_common.sh -e acme -e . -e certbot-apache -e certbot-nginx && \
-  ln -s /root/certbot/venv/bin/certbot /usr/bin/certbot && \
+  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" /usr/bin/pip install -r ./readthedocs.org.requirements.txt && \
+  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" /usr/bin/pip install --no-cache-dir \
+	--editable ./acme \
+	--editable ./certbot-dns-cloudxns \
+	--editable ./certbot-dns-digitalocean \
+	--editable ./certbot-dns-dnsimple \
+	--editable ./certbot-dns-dnsmadeeasy \
+	--editable ./certbot-dns-gehirn \
+	--editable ./certbot-dns-google \
+	--editable ./certbot-dns-linode \
+	--editable ./certbot-dns-luadns \
+	--editable ./certbot-dns-nsone \
+	--editable ./certbot-dns-ovh \
+	--editable ./certbot-dns-rfc2136 \
+	--editable ./certbot-dns-route53 \
+	--editable ./certbot-dns-sakuracloud \
+	--editable ./certbot-nginx \
+	--editable ./ && \
+  /usr/bin/certbot --version && \
   mkdir -p /etc/nginx/modsec/conf.d && \
   echo -e "# Example placeholder\n" > /etc/nginx/modsec/conf.d/example.conf && \
   echo -e "# Include the recommended configuration\nInclude /etc/nginx/modsec/modsecurity.conf\n# User generated\nInclude /etc/nginx/modsec/conf.d/*.conf\n\n# OWASP CRS v${MODSECURITY} rules\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf\nInclude /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/*.conf\n" > /etc/nginx/modsec/main.conf && \
@@ -161,7 +174,9 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   apk add gcc make perl && \
   cd /src/openssl-${OPENSSL_VERSION} && \
   make -j$(nproc) install && \
-  ln -s /usr/local/ssl/bin/openssl /usr/bin/ && \
+  if [ -f /usr/bin/openssl ]; then rm -f /usr/bin/openssl; fi && \
+  if [ -f /usr/local/ssl/bin/openssl ]; then ln -s /usr/local/ssl/bin/openssl /usr/bin/; fi && \
+  if [ -f /usr/local/bin/openssl ]; then ln -s /usr/local/bin/openssl /usr/bin/; fi && \
   cd ~ && \
   apk del perl gcc make && \
   rm -Rf /src && \
