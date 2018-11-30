@@ -170,6 +170,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf && \
   mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
+  curl https://raw.githubusercontent.com/SpiderLabs/ModSecurity/49495f1925a14f74f93cb0ef01172e5abc3e4c55/unicode.mapping -o /etc/nginx/modsec/unicode.mapping && \
   apk del ${build_pkgs} && \
   apk add ${runtime_pkgs} && \
   apk add gcc make perl && \
