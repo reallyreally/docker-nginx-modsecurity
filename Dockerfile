@@ -2,15 +2,15 @@ FROM alpine:latest
 
 MAINTAINER Troy Kelly <troy.kelly@really.ai>
 
-ENV VERSION=1.15.5
-ENV OPENSSL_VERSION=1.1.1
+ENV VERSION=1.15.7
+ENV OPENSSL_VERSION=1.1.1a
 ENV LIBPNG_VERSION=1.6.35
 ENV LUAJIT_VERSION=2.0.5
 ENV NGXDEVELKIT_VERSION=0.3.0
 ENV NGXLUA_VERSION=0.10.13
 ENV MODSECURITY=3
 ENV OWASPCRS_VERSION=3.0.0
-ENV PYTHON_VERSION=3.7.0
+ENV PYTHON_VERSION=3.7.1
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -155,6 +155,7 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
 	--editable ./certbot-dns-sakuracloud \
 	--editable ./certbot-nginx \
 	--editable ./ && \
+  CFLAGS="-I/usr/local/include" LDFLAGS="-L/usr/local/lib" /usr/bin/pip install dns-lexicon && \
   /usr/bin/certbot --version && \
   mkdir -p /etc/nginx/modsec/conf.d && \
   echo -e "# Example placeholder\n" > /etc/nginx/modsec/conf.d/example.conf && \
@@ -204,5 +205,6 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
 EXPOSE 80 443
 
 COPY docker-entrypoint.sh /usr/local/bin/
+COPY certbot.default.sh /usr/local/sbin/
 
 ENTRYPOINT ["docker-entrypoint.sh"]
