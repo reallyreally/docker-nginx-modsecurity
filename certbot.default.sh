@@ -40,7 +40,7 @@ PROVIDER=${DNS_PROVIDER}
 #
 #       lexicon cloudflare -h
 #
-PROVIDER_CREDENTIALS=("--auth-username=${DNS_USERNAME}" "--auth-token=${DNS_TOKEN}")
+#PROVIDER_CREDENTIALS=("--auth-username=${DNS_USERNAME}" "--auth-token=${DNS_TOKEN}")
 #
 # PROVIDER_UPDATE_DELAY:
 #   How many seconds to wait after updating your DNS records. This may be required,
@@ -54,16 +54,17 @@ PROVIDER_UPDATE_DELAY=30
 
 # To be invoked via Certbot's --manual-auth-hook
 function auth {
-    lexicon "${PROVIDER}" "${PROVIDER_CREDENTIALS[@]}" \
+    lexicon "${PROVIDER}" --auth-username="${DNS_USERNAME}" --auth-token="${DNS_TOKEN}" \
     create "${CERTBOT_DOMAIN}" TXT --name "_acme-challenge.${CERTBOT_DOMAIN}" --content "${CERTBOT_VALIDATION}"
-
+    echo "[Lexicon] Added _acme-challenge.${CERTBOT_DOMAIN}"
     sleep "${PROVIDER_UPDATE_DELAY}"
 }
 
 # To be invoked via Certbot's --manual-cleanup-hook
 function cleanup {
-    lexicon "${PROVIDER}" "${PROVIDER_CREDENTIALS[@]}" \
+    lexicon "${PROVIDER}" --auth-username="${DNS_USERNAME}" --auth-token="${DNS_TOKEN}" \
     delete "${CERTBOT_DOMAIN}" TXT --name "_acme-challenge.${CERTBOT_DOMAIN}" --content "${CERTBOT_VALIDATION}"
+    echo "[Lexicon] Deleted _acme-challenge.${CERTBOT_DOMAIN}"    
 }
 
 HANDLER=$1; shift;
