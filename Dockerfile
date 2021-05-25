@@ -2,15 +2,15 @@ FROM alpine:latest
 
 MAINTAINER Troy Kelly <troy.kelly@really.ai>
 
-ENV VERSION=1.15.7
-ENV OPENSSL_VERSION=1.1.1a
-ENV LIBPNG_VERSION=1.6.35
+ENV VERSION=1.20.0
+ENV OPENSSL_VERSION=1.1.1k
+ENV LIBPNG_VERSION=1.6.37
 ENV LUAJIT_VERSION=2.0.5
-ENV NGXDEVELKIT_VERSION=0.3.0
-ENV NGXLUA_VERSION=0.10.13
+ENV NGXDEVELKIT_VERSION=0.3.1
+ENV NGXLUA_VERSION=0.10.19
 ENV MODSECURITY=3
-ENV OWASPCRS_VERSION=3.0.0
-ENV PYTHON_VERSION=3.7.1
+ENV OWASPCRS_VERSION=3.3.0
+ENV PYTHON_VERSION=3.9.0
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -41,22 +41,33 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   cd /src && \
   git clone --depth 1 -b v${MODSECURITY}/master --single-branch https://github.com/SpiderLabs/ModSecurity && \
   git clone --depth 1 https://github.com/SpiderLabs/ModSecurity-nginx.git && \
+  echo "Fetching OpenSSL Source" && \
   wget -qO - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching Nginx Source" && \
   wget -qO - http://nginx.org/download/nginx-${VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching LibPNG Source" && \
   wget -qO - http://prdownloads.sourceforge.net/libpng/libpng-${LIBPNG_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching LUA Jit Source" && \
   wget -qO - http://luajit.org/download/LuaJIT-${LUAJIT_VERSION}.tar.gz | tar xzf  - -C /src && \
-  wget -qO - https://github.com/simpl/ngx_devel_kit/archive/v${NGXDEVELKIT_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching NGX Devel Kit Source" && \
+  wget -qO - https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v${NGXDEVELKIT_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching LUA Nginx Source" && \
   wget -qO - https://github.com/openresty/lua-nginx-module/archive/v${NGXLUA_VERSION}.tar.gz | tar xzf  - -C /src && \
-  wget -qO - https://github.com/SpiderLabs/owasp-modsecurity-crs/archive/v${OWASPCRS_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching OWASP Source" && \
+  wget -qO - https://github.com/coreruleset/coreruleset/archive/refs/tags/v${OWASPCRS_VERSION}.tar.gz | tar xzf  - -C /src && \
+  echo "Fetching Pyton Source" && \
   wget -qO - https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz | tar xzf  - -C /src && \
-  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v${MODSECURITY}/master/modsecurity.conf-recommended && \
-  cd /src/openssl-${OPENSSL_VERSION} && \
+  echo "Fetching ModSecurity Source" && \
+  wget -qO /src/modsecurity.conf https://raw.githubusercontent.com/SpiderLabs/ModSecurity/v${MODSECURITY}/master/modsecurity.conf-recommended
+
+RUN cd /src/openssl-${OPENSSL_VERSION} && \
   ./config no-async -Wl,--enable-new-dtags,-rpath,'$(LIBRPATH)' && \
   make -j$(nproc) depend && \
   make -j$(nproc) && \
-  make -j$(nproc) install && \
-  cd /src/Python-${PYTHON_VERSION} && \
-  ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared && \
+  make -j$(nproc) install
+
+RUN cd /src/Python-${PYTHON_VERSION} && \
+  ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --with-openssl=/src/openssl-${OPENSSL_VERSION} --enable-shared && \
   make -j$(nproc) && \
   make -j$(nproc) install && \
   python3 -m ensurepip && \
@@ -68,15 +79,17 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   make -j$(nproc) install && \
   cd /src/libpng-${LIBPNG_VERSION} && \
   ./configure --build=$CBUILD --host=$CHOST --prefix=/usr --enable-shared --with-libpng-compat && \
-  make -j$(nproc) install V=0 && \
-  cd /src/ModSecurity && \
+  make -j$(nproc) install V=0
+
+RUN cd /src/ModSecurity && \
   git submodule init && \
   git submodule update && \
   ./build.sh && \
   ./configure && \
   make -j$(nproc) && \
-  make install && \
-  cd /src/nginx-${VERSION} && \
+  make install
+
+RUN cd /src/nginx-${VERSION} && \
   ./configure \
   	--prefix=/etc/nginx \
   	--sbin-path=/usr/sbin/nginx \
@@ -170,8 +183,8 @@ RUN build_pkgs="alpine-sdk apr-dev apr-util-dev autoconf automake binutils-gold 
   mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf && \
   mv /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf && \
   cp /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf.example /usr/local/owasp-modsecurity-crs-${OWASPCRS_VERSION}/crs-setup.conf && \
-  curl https://raw.githubusercontent.com/SpiderLabs/ModSecurity/49495f1925a14f74f93cb0ef01172e5abc3e4c55/unicode.mapping -o /etc/nginx/modsec/unicode.mapping && \
-  apk del ${build_pkgs} && \
+  curl https://raw.githubusercontent.com/SpiderLabs/ModSecurity/49495f1925a14f74f93cb0ef01172e5abc3e4c55/unicode.mapping -o /etc/nginx/modsec/unicode.mapping
+RUN apk del ${build_pkgs} && \
   apk add ${runtime_pkgs} && \
   apk add gcc make perl && \
   cd /src/openssl-${OPENSSL_VERSION} && \
